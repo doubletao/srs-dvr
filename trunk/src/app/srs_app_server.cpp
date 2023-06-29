@@ -715,6 +715,9 @@ srs_error_t SrsServer::http_handle()
     if ((err = http_api_mux->handle("/api/v1/summaries", new SrsGoApiSummaries())) != srs_success) {
         return srs_error_wrap(err, "handle summaries");
     }
+    if ((err = http_api_mux->handle("/api/v1/dvr", new SrsGoApiDvr())) != srs_success) {
+        return srs_error_wrap(err, "handle Dvr api");
+    }
     if ((err = http_api_mux->handle("/api/v1/rusages", new SrsGoApiRusages())) != srs_success) {
         return srs_error_wrap(err, "handle rusages");
     }

@@ -1230,3 +1230,54 @@ srs_error_t SrsGoApiMetrics::serve_http(ISrsHttpResponseWriter* w, ISrsHttpMessa
 
     return srs_api_response(w, r, ss.str());
 }
+
+SrsGoApiDvr::SrsGoApiDvr()
+{
+}
+
+SrsGoApiDvr::~SrsGoApiDvr()
+{
+}
+
+srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *r)
+{
+    // 解析请求路径和参数
+    std::string path = r->path();
+    std::string method = r->method();
+    std::string client_id = r->query_get("client_id"); // 解析client_id参数
+
+    // 根据请求路径和方法进行处理
+    if (path == "/api/v1/dvr/start" && method == "POST") {
+        // 开启DVR录制
+        // 根据client_id启动对应的录制流或客户端的录制
+        // 返回相应的状态码和消息
+        std::string msg = "DVR recording started.(just test, not yet)";
+        w->header()->set_content_type("text/plain; charset=utf-8");
+        w->header()->set_content_length(msg.length());
+        w->write_header(SRS_CONSTS_HTTP_OK);
+        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
+        w->final_request(); // optional flush.
+    } else if (path == "/api/v1/dvr/stop" && method == "POST") {
+        // 关闭DVR录制
+        // 根据client_id停止对应的录制流或客户端的录制
+        // 返回相应的状态码和消息
+        std::string msg = "DVR recording stoped.(just test, not yet)";
+        w->header()->set_content_type("text/plain; charset=utf-8");
+        w->header()->set_content_length(msg.length());
+        w->write_header(SRS_CONSTS_HTTP_OK);
+        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
+        w->final_request(); // optional flush.
+    } else {
+        // 处理其他未知请求
+        // 返回相应的状态码和消息
+        std::string msg = "DVR:no path matched.";
+        w->header()->set_content_type("text/plain; charset=utf-8");
+        w->header()->set_content_length(msg.length());
+        w->write_header(SRS_CONSTS_HTTP_NotFound);
+        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
+        w->final_request(); // optional flush.
+    }
+
+    return srs_success;
+}
+

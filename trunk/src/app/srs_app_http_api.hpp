@@ -87,6 +87,14 @@ public:
     virtual srs_error_t serve_http(ISrsHttpResponseWriter* w, ISrsHttpMessage* r);
 };
 
+class SrsGoApiDvr : public ISrsHttpHandler 
+{
+public:
+    SrsGoApiDvr();
+    virtual ~SrsGoApiDvr();
+    virtual srs_error_t serve_http(ISrsHttpResponseWriter* w, ISrsHttpMessage* r);
+};
+
 class SrsGoApiSelfProcStats : public ISrsHttpHandler
 {
 public:
