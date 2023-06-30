@@ -1,3 +1,5 @@
+fetch from https://github.com/ossrs
+try to make http api support dvr start/stop recording
 # SRS(Simple Realtime Server)
 
 ![](http://ossrs.net/gif/v1/sls.gif?site=github.com&path=/srs/5.0release)
