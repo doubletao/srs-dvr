@@ -1285,9 +1285,6 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:hreq->to_request failed!");
         // }
 
-        SrsJsonObject* robj = NULL;
-        SrsAutoFree(SrsJsonObject, robj);
-    
         string stream_url = "";
         if (true) {
             SrsJsonAny* jr = NULL;
@@ -1305,7 +1302,7 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
                 return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
             }
         
-            robj = jr->to_object();
+            SrsJsonObject* robj = jr->to_object();
             if (!robj){
                 std::string msg = "DVR:to_object failed, not known why : req_body:" + request_body;
                 Respond(msg, SRS_CONSTS_HTTP_OK);
