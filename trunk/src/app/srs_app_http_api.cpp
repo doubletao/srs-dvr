@@ -1239,43 +1239,71 @@ SrsGoApiDvr::~SrsGoApiDvr()
 {
 }
 
-srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *r)
+srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *request)
 {
+    auto Respond = [w](const string & msg, int code){
+        w->header()->set_content_type("text/plain; charset=utf-8");
+        w->header()->set_content_length(msg.length());
+        w->write_header(code);
+        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
+        w->final_request(); // optional flush.
+    };
+
     // 解析请求路径和参数
-    std::string path = r->path();
-    uint8_t method = r->method();
-    std::string client_id = r->query_get("client_id"); // 解析client_id参数
+    std::string path = request->path();
+    uint8_t method = request->method();
+    std::string request_body;
+    request->body_read_all(request_body);
 
     // 根据请求路径和方法进行处理
     if (path == "/api/v1/dvr/start" && method == SRS_CONSTS_HTTP_POST) {
         // 开启DVR录制
         // 根据client_id启动对应的录制流或客户端的录制
         // 返回相应的状态码和消息
-        std::string msg = "DVR:recording started.(just test, not yet)";
-        w->header()->set_content_type("text/plain; charset=utf-8");
-        w->header()->set_content_length(msg.length());
-        w->write_header(SRS_CONSTS_HTTP_OK);
-        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
-        w->final_request(); // optional flush.
+        std::string msg = "DVR:recording started.(just test, not yet) : req_body:" + request_body;
+
+        SrsConfDirective* vhost = _srs_config->get_vhost(r->host());
+        if (!vhost || !_srs_config->get_vhost_enabled(vhost)) 
+        {
+            Respond("DVR:no vhost can be found or not enabled : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no vhost can be found or not enabled");
+        }
+
+        // convert to concreate class.
+        SrsHttpMessage* hreq = dynamic_cast<SrsHttpMessage*>(request);
+        if (!hreq)
+        {
+            Respond("DVR:dynamic_cast<SrsHttpMessage*> failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:dynamic_cast<SrsHttpMessage*> failed!");
+        }
+    
+        // hijack for entry.
+        SrsRequest* r = hreq->to_request(vhost->arg0());
+        if (!r)
+        {
+            Respond("DVR:hreq->to_request failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:hreq->to_request failed!");
+        }
+
+        SrsLiveSource *rtmp = _srs_sources->fetch(r);
+        if (!rtmp)
+        {
+            Respond("DVR:no rtmp stream found! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no rtmp stream found!");
+        }
+
+        Respond(msg, SRS_CONSTS_HTTP_OK);
     } else if (path == "/api/v1/dvr/stop" && method == SRS_CONSTS_HTTP_POST) {
         // 关闭DVR录制
         // 根据client_id停止对应的录制流或客户端的录制
         // 返回相应的状态码和消息
-        std::string msg = "DVR:recording stoped.(just test, not yet)";
-        w->header()->set_content_type("text/plain; charset=utf-8");
-        w->header()->set_content_length(msg.length());
-        w->write_header(SRS_CONSTS_HTTP_OK);
-        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
-        w->final_request(); // optional flush.
+        std::string msg = "DVR:recording stoped.(just test, not yet) : req_body:" + request_body;
+        Respond(msg, SRS_CONSTS_HTTP_OK);
     } else {
         // 处理其他未知请求
         // 返回相应的状态码和消息
-        std::string msg = "DVR:no path matched.";
-        w->header()->set_content_type("text/plain; charset=utf-8");
-        w->header()->set_content_length(msg.length());
-        w->write_header(SRS_CONSTS_HTTP_NotFound);
-        w->write((char*)msg.data(), (int)msg.length()); // write N times, N>0
-        w->final_request(); // optional flush.
+        std::string msg = "DVR:no path matched. : req_body:" + request_body;
+        Respond(msg, SRS_CONSTS_HTTP_NotFound);
     }
 
     return srs_success;
