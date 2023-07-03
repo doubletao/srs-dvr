@@ -1262,7 +1262,7 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         // 返回相应的状态码和消息
         std::string msg = "DVR:recording started.(just test, not yet) : req_body:" + request_body;
 
-        SrsConfDirective* vhost = _srs_config->get_vhost(r->host());
+        SrsConfDirective* vhost = _srs_config->get_vhost(request->host());
         if (!vhost || !_srs_config->get_vhost_enabled(vhost)) 
         {
             Respond("DVR:no vhost can be found or not enabled : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
