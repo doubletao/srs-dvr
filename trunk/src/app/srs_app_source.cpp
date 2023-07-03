@@ -1838,7 +1838,7 @@ SrsLiveSource* SrsLiveSourceManager::fetch(const string &stream_url)
 
 string SrsLiveSourceManager::all_streams()
 {
-    string strRet;
+    std::string strRet;
     for (auto it : pool)
     {
         strRet += it.first;

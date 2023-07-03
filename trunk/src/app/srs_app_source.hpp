@@ -457,10 +457,10 @@ public:
     virtual SrsLiveSource* fetch(SrsRequest* r);
 
     // Get the exists source by stream url
-    SrsLiveSource* fetch(const string &stream_url);
+    SrsLiveSource* fetch(const std::string &stream_url);
 
     // print all streams(for debug)
-    string all_streams();
+    std::string all_streams();
 public:
     // dispose and cycle all sources.
     virtual void dispose();
