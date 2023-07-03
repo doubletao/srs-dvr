@@ -1315,7 +1315,7 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
             }
 
             SrsJsonAny* prop = NULL;
-            if ((prop = p->ensure_property_string("streamurl")) == NULL) 
+            if ((prop = robj->ensure_property_string("streamurl")) == NULL) 
             {
                 std::string msg = "DVR:ensure_property_string failed, not known why : req_body:" + request_body;
                 Respond(msg, SRS_CONSTS_HTTP_OK);
