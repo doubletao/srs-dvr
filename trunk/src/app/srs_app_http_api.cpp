@@ -1262,33 +1262,77 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         // 返回相应的状态码和消息
         std::string msg = "DVR:recording started.(just test, not yet) : req_body:" + request_body;
 
-        SrsConfDirective* vhost = _srs_config->get_vhost(request->host());
-        if (!vhost || !_srs_config->get_vhost_enabled(vhost)) 
-        {
-            Respond("DVR:no vhost can be found or not enabled : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
-            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no vhost can be found or not enabled");
-        }
+        // SrsConfDirective* vhost = _srs_config->get_vhost(request->host());
+        // if (!vhost || !_srs_config->get_vhost_enabled(vhost)) 
+        // {
+        //     Respond("DVR:no vhost can be found or not enabled : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+        //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no vhost can be found or not enabled");
+        // }
 
-        // convert to concreate class.
-        SrsHttpMessage* hreq = dynamic_cast<SrsHttpMessage*>(request);
-        if (!hreq)
-        {
-            Respond("DVR:dynamic_cast<SrsHttpMessage*> failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
-            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:dynamic_cast<SrsHttpMessage*> failed!");
-        }
+        // // convert to concreate class.
+        // SrsHttpMessage* hreq = dynamic_cast<SrsHttpMessage*>(request);
+        // if (!hreq)
+        // {
+        //     Respond("DVR:dynamic_cast<SrsHttpMessage*> failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+        //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:dynamic_cast<SrsHttpMessage*> failed!");
+        // }
     
-        // hijack for entry.
-        SrsRequest* r = hreq->to_request(vhost->arg0());
-        if (!r)
-        {
-            Respond("DVR:hreq->to_request failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
-            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:hreq->to_request failed!");
+        // // hijack for entry.
+        // SrsRequest* r = hreq->to_request(vhost->arg0());
+        // if (!r)
+        // {
+        //     Respond("DVR:hreq->to_request failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+        //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:hreq->to_request failed!");
+        // }
+
+        SrsJsonObject* robj = NULL;
+        SrsAutoFree(SrsJsonObject, robj);
+    
+        string stream_url = "";
+        if (true) {
+            SrsJsonAny* jr = NULL;
+            if ((jr = SrsJsonAny::loads(request_body)) == NULL) {
+                std::string msg = "DVR:load body json failed(unmarshal failed) : req_body:" + request_body;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+        
+            if (!jr->is_object()) {
+                std::string msg = "DVR:load body json failed(not a json object) : req_body:" + request_body;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+
+                srs_freep(jr);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+        
+            robj = jr->to_object();
+            if (!robj){
+                std::string msg = "DVR:to_object failed, not known why : req_body:" + request_body;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+
+                srs_freep(jr);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+
+            SrsJsonAny* prop = NULL;
+            if ((prop = p->ensure_property_string("streamurl")) == NULL) 
+            {
+                std::string msg = "DVR:ensure_property_string failed, not known why : req_body:" + request_body;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+
+                srs_freep(jr);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+            stream_url = prop->to_str();
+
+            srs_freep(jr);
         }
 
-        SrsLiveSource *rtmp = _srs_sources->fetch(r);
+        SrsLiveSource *rtmp = _srs_sources->fetch(stream_url);
         if (!rtmp)
         {
-            Respond("DVR:no rtmp stream found! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
+            string strAllStream = _srs_sources->all_streams();
+            Respond("DVR:no rtmp stream found! : req_body:" + request_body + " streams:" + strAllStream, SRS_CONSTS_HTTP_OK);
             return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no rtmp stream found!");
         }
 

@@ -455,6 +455,12 @@ public:
 public:
     // Get the exists source, NULL when not exists.
     virtual SrsLiveSource* fetch(SrsRequest* r);
+
+    // Get the exists source by stream url
+    SrsLiveSource* fetch(const string &stream_url);
+
+    // print all streams(for debug)
+    string all_streams();
 public:
     // dispose and cycle all sources.
     virtual void dispose();

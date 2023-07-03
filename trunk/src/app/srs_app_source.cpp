@@ -1823,6 +1823,30 @@ SrsLiveSource* SrsLiveSourceManager::fetch(SrsRequest* r)
     return source;
 }
 
+SrsLiveSource* SrsLiveSourceManager::fetch(const string &stream_url)
+{
+    SrsLiveSource* source = NULL;
+    
+    if (pool.find(stream_url) == pool.end()) {
+        return NULL;
+    }
+    
+    source = pool[stream_url];
+    
+    return source;
+}
+
+string SrsLiveSourceManager::all_streams()
+{
+    string strRet;
+    for (auto it : pool)
+    {
+        strRet += it.first;
+        strRet += ";";
+    }
+    return strRet;
+}
+
 void SrsLiveSourceManager::dispose()
 {
     std::map<std::string, SrsLiveSource*>::iterator it;
