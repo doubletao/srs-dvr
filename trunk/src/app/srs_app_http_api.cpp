@@ -1249,7 +1249,7 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         w->final_request(); // optional flush.
     };
 
-    auto UnmarshalStringFromJson = [this](const std::string & strJson, const std::string & strParam, std::string & strRet)->srs_error_t
+    auto UnmarshalStringFromJson = [this, Respond](const std::string & strJson, const std::string & strParam, std::string & strRet)->srs_error_t
     {
         SrsJsonAny* jr = NULL;
             if ((jr = SrsJsonAny::loads(strJson)) == NULL) {
@@ -1302,9 +1302,10 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         std::string msg = "DVR:recording started. : req_body:" + request_body;
 
         std::string stream_url;
-        if ((srs_error_t err = UnmarshalStringFromJson(request_body, "streamurl", stream_url)) != srs_success)
+        srs_error_t errUnmarshal = UnmarshalStringFromJson(request_body, "streamurl", stream_url);
+        if (errUnmarshal != srs_success)
         {
-            return err;
+            return errUnmarshal;
         }
 
         SrsLiveSource *rtmp = _srs_sources->fetch(stream_url);
@@ -1320,7 +1321,7 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         srs_error_t errRet = rtmp->start_dvr_record();
         if (srs_success != errRet)
         {
-            Respond(msg + " req info: " + strReqInfo + " error:" + errRet->description(), SRS_CONSTS_HTTP_OK);
+            Respond(msg + " req info: " + strReqInfo + " error:" + srs_error_desc(errRet), SRS_CONSTS_HTTP_OK);
             return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:start_dvr_record failed!");
         }
 
