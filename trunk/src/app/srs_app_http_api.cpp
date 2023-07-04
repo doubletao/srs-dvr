@@ -1262,29 +1262,6 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         // 返回相应的状态码和消息
         std::string msg = "DVR:recording started.(just test, not yet) : req_body:" + request_body;
 
-        // SrsConfDirective* vhost = _srs_config->get_vhost(request->host());
-        // if (!vhost || !_srs_config->get_vhost_enabled(vhost)) 
-        // {
-        //     Respond("DVR:no vhost can be found or not enabled : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
-        //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no vhost can be found or not enabled");
-        // }
-
-        // // convert to concreate class.
-        // SrsHttpMessage* hreq = dynamic_cast<SrsHttpMessage*>(request);
-        // if (!hreq)
-        // {
-        //     Respond("DVR:dynamic_cast<SrsHttpMessage*> failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
-        //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:dynamic_cast<SrsHttpMessage*> failed!");
-        // }
-    
-        // // hijack for entry.
-        // SrsRequest* r = hreq->to_request(vhost->arg0());
-        // if (!r)
-        // {
-        //     Respond("DVR:hreq->to_request failed! : req_body:" + request_body, SRS_CONSTS_HTTP_OK);
-        //     return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:hreq->to_request failed!");
-        // }
-
         string stream_url = "";
         if (true) {
             SrsJsonAny* jr = NULL;
@@ -1333,7 +1310,9 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
             return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no rtmp stream found!");
         }
 
-        Respond(msg, SRS_CONSTS_HTTP_OK);
+        std::string strReqInfo = rtmp->get_curr_req_info();
+
+        Respond(msg + " req: " + strReqInfo, SRS_CONSTS_HTTP_OK);
     } else if (path == "/api/v1/dvr/stop" && method == SRS_CONSTS_HTTP_POST) {
         // 关闭DVR录制
         // 根据client_id停止对应的录制流或客户端的录制

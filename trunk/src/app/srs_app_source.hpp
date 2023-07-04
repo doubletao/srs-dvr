@@ -614,6 +614,9 @@ public:
     virtual void on_edge_proxy_unpublish();
 public:
     virtual std::string get_curr_origin();
+public:
+    //for test, get current vhost from req
+    std::string get_curr_req_info();
 };
 
 #endif

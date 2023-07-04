@@ -2839,3 +2839,20 @@ string SrsLiveSource::get_curr_origin()
     return play_edge->get_curr_origin();
 }
 
+std::string SrsLiveSource::get_curr_req_info()
+{
+    std::string strRet;
+    if (req)
+    {
+        strRet += "schema:[" + req->schema + "] ";
+        strRet += "vhost:[" + req->vhost + "] ";
+        strRet += "host:[" + req->host + "] ";
+        strRet += "port:[" + std::to_string(req->port) + "] ";
+        strRet += "app:[" + req->app + "] ";
+        strRet += "param:[" + req->param + "] ";
+        strRet += "stream:[" + req->stream + "] ";
+        strRet += "get_stream_url:[" + req->get_stream_url() + "] ";
+    }
+    return strRet;
+}
+
