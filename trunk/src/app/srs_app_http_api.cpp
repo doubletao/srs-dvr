@@ -1249,6 +1249,47 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
         w->final_request(); // optional flush.
     };
 
+    auto UnmarshalStringFromJson = [this](const std::string & strJson, const std::string & strParam, std::string & strRet)->srs_error_t
+    {
+        SrsJsonAny* jr = NULL;
+            if ((jr = SrsJsonAny::loads(strJson)) == NULL) {
+                std::string msg = "DVR:load body json failed(unmarshal failed) : req_body:" + strJson;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+        
+            if (!jr->is_object()) {
+                std::string msg = "DVR:load body json failed(not a json object) : req_body:" + strJson;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+
+                srs_freep(jr);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+        
+            SrsJsonObject* robj = jr->to_object();
+            if (!robj){
+                std::string msg = "DVR:to_object failed, not known why : req_body:" + strJson;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+
+                srs_freep(jr);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+
+            SrsJsonAny* prop = NULL;
+            if ((prop = robj->ensure_property_string(strParam)) == NULL) 
+            {
+                std::string msg = "DVR:ensure_property_string failed, not known why : req_body:" + strJson;
+                Respond(msg, SRS_CONSTS_HTTP_OK);
+
+                srs_freep(jr);
+                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
+            }
+            strRet = prop->to_str();
+
+            srs_freep(jr);
+        return srs_success;
+    };
+
     // 解析请求路径和参数
     std::string path = request->path();
     uint8_t method = request->method();
@@ -1258,71 +1299,40 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
     // 根据请求路径和方法进行处理
     if (path == "/api/v1/dvr/start" && method == SRS_CONSTS_HTTP_POST) {
         // 开启DVR录制
-        // 根据client_id启动对应的录制流或客户端的录制
-        // 返回相应的状态码和消息
-        std::string msg = "DVR:recording started.(just test, not yet) : req_body:" + request_body;
+        std::string msg = "DVR:recording started. : req_body:" + request_body;
 
-        string stream_url = "";
-        if (true) {
-            SrsJsonAny* jr = NULL;
-            if ((jr = SrsJsonAny::loads(request_body)) == NULL) {
-                std::string msg = "DVR:load body json failed(unmarshal failed) : req_body:" + request_body;
-                Respond(msg, SRS_CONSTS_HTTP_OK);
-                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
-            }
-        
-            if (!jr->is_object()) {
-                std::string msg = "DVR:load body json failed(not a json object) : req_body:" + request_body;
-                Respond(msg, SRS_CONSTS_HTTP_OK);
-
-                srs_freep(jr);
-                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
-            }
-        
-            SrsJsonObject* robj = jr->to_object();
-            if (!robj){
-                std::string msg = "DVR:to_object failed, not known why : req_body:" + request_body;
-                Respond(msg, SRS_CONSTS_HTTP_OK);
-
-                srs_freep(jr);
-                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
-            }
-
-            SrsJsonAny* prop = NULL;
-            if ((prop = robj->ensure_property_string("streamurl")) == NULL) 
-            {
-                std::string msg = "DVR:ensure_property_string failed, not known why : req_body:" + request_body;
-                Respond(msg, SRS_CONSTS_HTTP_OK);
-
-                srs_freep(jr);
-                return srs_error_new(ERROR_OCLUSTER_DISCOVER, msg.c_str());
-            }
-            stream_url = prop->to_str();
-
-            srs_freep(jr);
+        std::string stream_url;
+        if ((srs_error_t err = UnmarshalStringFromJson(request_body, "streamurl", stream_url)) != srs_success)
+        {
+            return err;
         }
 
         SrsLiveSource *rtmp = _srs_sources->fetch(stream_url);
         if (!rtmp)
         {
             string strAllStream = _srs_sources->all_streams();
-            Respond("DVR:no rtmp stream found! : req_body:" + request_body + " streams:" + strAllStream, SRS_CONSTS_HTTP_OK);
+            Respond("DVR:no rtmp stream found! : req_body:" + request_body + " stream list:" + strAllStream, SRS_CONSTS_HTTP_OK);
             return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no rtmp stream found!");
         }
 
         std::string strReqInfo = rtmp->get_curr_req_info();
 
-        Respond(msg + " req: " + strReqInfo, SRS_CONSTS_HTTP_OK);
+        srs_error_t errRet = rtmp->start_dvr_record();
+        if (srs_success != errRet)
+        {
+            Respond(msg + " req info: " + strReqInfo + " error:" + errRet->description(), SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:start_dvr_record failed!");
+        }
+
+        Respond(msg + " req info: " + strReqInfo, SRS_CONSTS_HTTP_OK);
     } else if (path == "/api/v1/dvr/stop" && method == SRS_CONSTS_HTTP_POST) {
         // 关闭DVR录制
-        // 根据client_id停止对应的录制流或客户端的录制
-        // 返回相应的状态码和消息
-        std::string msg = "DVR:recording stoped.(just test, not yet) : req_body:" + request_body;
+        std::string msg = "DVR:recording stoped. : req_body:" + request_body;
         Respond(msg, SRS_CONSTS_HTTP_OK);
     } else {
         // 处理其他未知请求
         // 返回相应的状态码和消息
-        std::string msg = "DVR:no path matched. : req_body:" + request_body;
+        std::string msg = "DVR:no path matched. suggest:{[/api/v1/dvr/start], [/api/v1/dvr/stop]}: req_body:" + request_body;
         Respond(msg, SRS_CONSTS_HTTP_NotFound);
     }
 

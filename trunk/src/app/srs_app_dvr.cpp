@@ -965,6 +965,35 @@ srs_error_t SrsDvr::initialize(SrsOriginHub* h, SrsRequest* r)
     return err;
 }
 
+srs_error_t SrsDvr::initialize_without_check_filter(SrsOriginHub* h, SrsRequest* r)
+{
+    srs_error_t err = srs_success;
+    
+    req = r->copy();
+    hub = h;
+    
+    actived = true;
+    
+    srs_freep(plan);
+    if ((err = SrsDvrPlan::create_plan(r->vhost, &plan)) != srs_success) {
+        return srs_error_wrap(err, "create plan");
+    }
+    
+    std::string path = _srs_config->get_dvr_path(r->vhost);
+    SrsDvrSegmenter* segmenter = NULL;
+    if (srs_string_ends_with(path, ".mp4")) {
+        segmenter = new SrsDvrMp4Segmenter();
+    } else {
+        segmenter = new SrsDvrFlvSegmenter();
+    }
+    
+    if ((err = plan->initialize(hub, segmenter, r)) != srs_success) {
+        return srs_error_wrap(err, "plan initialize");
+    }
+    
+    return err;
+}
+
 srs_error_t SrsDvr::on_publish(SrsRequest* r)
 {
     srs_error_t err = srs_success;

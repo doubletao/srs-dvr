@@ -1404,6 +1404,49 @@ srs_error_t SrsOriginHub::on_reload_vhost_dvr(string vhost)
     return err;
 }
 
+//start or stop dvr record
+srs_error_t SrsOriginHub::start_dvr_record()
+{
+    //copy from on_reload_vhost_dvr...
+    
+    srs_error_t err = srs_success;
+    
+    std::string vhost = req_->vhost;
+    
+    // TODO: FIXME: maybe should ignore when publish already stopped?
+    
+    // cleanup dvr
+    dvr->on_unpublish();
+    
+    // Don't start DVR when source is not active.
+    if (!is_active) {
+        return err;
+    }
+    
+    // reinitialize the dvr, update plan.
+    if ((err = dvr->initialize_without_check_filter(this, req_)) != srs_success) {
+        return srs_error_wrap(err, "reload dvr");
+    }
+    
+    // start to publish by new plan.
+    if ((err = dvr->on_publish(req_)) != srs_success) {
+        return srs_error_wrap(err, "dvr publish failed");
+    }
+    
+    if ((err = on_dvr_request_sh()) != srs_success) {
+        return srs_error_wrap(err, "request sh");
+    }
+    
+    srs_trace("vhost %s dvr reload success", vhost.c_str());
+    
+    return err;
+}
+
+srs_error_t SrsOriginHub::stop_dvr_record()
+{
+    dvr->on_unpublish();
+}
+
 srs_error_t SrsOriginHub::on_reload_vhost_transcode(string vhost)
 {
     srs_error_t err = srs_success;
@@ -2856,3 +2899,12 @@ std::string SrsLiveSource::get_curr_req_info()
     return strRet;
 }
 
+srs_error_t SrsLiveSource::start_dvr_record()
+{
+    return hub->start_dvr_record();
+}
+
+srs_error_t SrsLiveSource::stop_dvr_record()
+{
+    return hub->stop_dvr_record();
+}

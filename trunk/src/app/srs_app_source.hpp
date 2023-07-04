@@ -373,9 +373,13 @@ public:
     virtual srs_error_t on_reload_vhost_dash(std::string vhost);
     virtual srs_error_t on_reload_vhost_hls(std::string vhost);
     virtual srs_error_t on_reload_vhost_hds(std::string vhost);
-    virtual srs_error_t on_reload_vhost_dvr(std::string vhost);
     virtual srs_error_t on_reload_vhost_transcode(std::string vhost);
     virtual srs_error_t on_reload_vhost_exec(std::string vhost);
+
+    virtual srs_error_t on_reload_vhost_dvr(std::string vhost);
+    //start or stop dvr record
+    srs_error_t start_dvr_record();
+    srs_error_t stop_dvr_record();
 private:
     virtual srs_error_t create_forwarders();
     virtual srs_error_t create_backend_forwarders(bool& applied);
@@ -617,6 +621,9 @@ public:
 public:
     //for test, get current vhost from req
     std::string get_curr_req_info();
+    //start or stop dvr record
+    srs_error_t start_dvr_record();
+    srs_error_t stop_dvr_record();
 };
 
 #endif

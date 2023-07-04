@@ -251,6 +251,9 @@ public:
     // mux the video packets to dvr.
     // @param shared_video, directly ptr, copy it if need to save it.
     virtual srs_error_t on_video(SrsSharedPtrMessage* shared_video, SrsFormat* format);
+
+    //do not check the srs_config_apply_filter, force the stream to be initialized
+    srs_error_t initialize_without_check_filter(SrsOriginHub* h, SrsRequest* r);
 };
 
 extern SrsAsyncCallWorker* _srs_dvr_async;
