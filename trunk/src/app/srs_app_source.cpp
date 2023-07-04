@@ -1445,6 +1445,7 @@ srs_error_t SrsOriginHub::start_dvr_record()
 srs_error_t SrsOriginHub::stop_dvr_record()
 {
     dvr->on_unpublish();
+    return srs_success;
 }
 
 srs_error_t SrsOriginHub::on_reload_vhost_transcode(string vhost)

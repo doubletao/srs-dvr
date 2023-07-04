@@ -1329,7 +1329,31 @@ srs_error_t SrsGoApiDvr::serve_http(ISrsHttpResponseWriter *w, ISrsHttpMessage *
     } else if (path == "/api/v1/dvr/stop" && method == SRS_CONSTS_HTTP_POST) {
         // 关闭DVR录制
         std::string msg = "DVR:recording stoped. : req_body:" + request_body;
-        Respond(msg, SRS_CONSTS_HTTP_OK);
+        std::string stream_url;
+        srs_error_t errUnmarshal = UnmarshalStringFromJson(request_body, "streamurl", stream_url);
+        if (errUnmarshal != srs_success)
+        {
+            return errUnmarshal;
+        }
+
+        SrsLiveSource *rtmp = _srs_sources->fetch(stream_url);
+        if (!rtmp)
+        {
+            string strAllStream = _srs_sources->all_streams();
+            Respond("DVR:no rtmp stream found! : req_body:" + request_body + " stream list:" + strAllStream, SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:no rtmp stream found!");
+        }
+
+        std::string strReqInfo = rtmp->get_curr_req_info();
+
+        srs_error_t errRet = rtmp->stop_dvr_record();
+        if (srs_success != errRet)
+        {
+            Respond(msg + " req info: " + strReqInfo + " error:" + srs_error_desc(errRet), SRS_CONSTS_HTTP_OK);
+            return srs_error_new(ERROR_SYSTEM_CONFIG_INVALID, "DVR:stop_dvr_record failed!");
+        }
+
+        Respond(msg + " req info: " + strReqInfo, SRS_CONSTS_HTTP_OK);
     } else {
         // 处理其他未知请求
         // 返回相应的状态码和消息
