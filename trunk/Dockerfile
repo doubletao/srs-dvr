@@ -24,12 +24,15 @@ RUN if [[ $INSTALLDEPENDS != 'NO' ]]; then \
 
 # Copy source code to docker.
 COPY . /srs
-WORKDIR /srs/trunk
+WORKDIR /srs
 
+RUN pwd
+RUN ls -l
 # Build and install SRS.
 # Note that SRT is enabled by default, so we configure without --srt=on.
 # Note that we have copied all files by make install.
-RUN ./configure --gb28181=on ${CONFARGS} && make ${MAKEARGS} && make install
+# RUN ./configure --gb28181=on ${CONFARGS} && make ${MAKEARGS} && make install
+RUN ./configure --gb28181=on ${CONFARGS} --ffmpeg-tool=on && make ${MAKEARGS} && make install
 
 ############################################################
 # dist
